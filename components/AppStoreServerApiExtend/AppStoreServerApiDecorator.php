@@ -1,8 +1,11 @@
 <?php
 
-namespace api\components\AppStoreServerApiExtend;
+namespace app\components\AppStoreServerApiExtend;
 
 use app\components\AppStoreServerApiExtend\EnvironmentExternalApi;
+use app\components\GetTransactionReport\GetTransactionReportQueryParams;
+use app\components\GetTransactionReport\GetTransactionReportRequest;
+use app\components\GetTransactionReport\GetTransactionReportResponse;
 use Readdle\AppStoreServerAPI\AppStoreServerAPIInterface;
 use Readdle\AppStoreServerAPI\Environment;
 use Readdle\AppStoreServerAPI\Exception\HTTPRequestAborted;
@@ -27,7 +30,6 @@ use Readdle\AppStoreServerAPI\Request\GetTransactionInfoRequest;
 use Readdle\AppStoreServerAPI\Request\LookUpOrderIdRequest;
 use Readdle\AppStoreServerAPI\Request\MassExtendSubscriptionRenewalDateRequest;
 use Readdle\AppStoreServerAPI\Request\RequestTestNotificationRequest;
-use Readdle\AppStoreServerAPI\Request\RetrieveExternalPurchaseReportRequest;
 use Readdle\AppStoreServerAPI\Request\SendConsumptionInformationRequest;
 use Readdle\AppStoreServerAPI\RequestBody\AbstractRequestBody;
 use Readdle\AppStoreServerAPI\RequestBody\ConsumptionRequestBody;
@@ -39,7 +41,6 @@ use Readdle\AppStoreServerAPI\RequestQueryParams\GetAllSubscriptionStatusesQuery
 use Readdle\AppStoreServerAPI\RequestQueryParams\GetNotificationHistoryQueryParams;
 use Readdle\AppStoreServerAPI\RequestQueryParams\GetRefundHistoryQueryParams;
 use Readdle\AppStoreServerAPI\RequestQueryParams\GetTransactionHistoryQueryParams;
-use Readdle\AppStoreServerAPI\RequestQueryParams\RetrieveExternalPurchaseReportQueryParams;
 use Readdle\AppStoreServerAPI\Response\AbstractResponse;
 use Readdle\AppStoreServerAPI\Response\CheckTestNotificationResponse;
 use Readdle\AppStoreServerAPI\Response\ExtendRenewalDateResponse;
@@ -49,12 +50,11 @@ use Readdle\AppStoreServerAPI\Response\MassExtendRenewalDateStatusResponse;
 use Readdle\AppStoreServerAPI\Response\NotificationHistoryResponse;
 use Readdle\AppStoreServerAPI\Response\OrderLookupResponse;
 use Readdle\AppStoreServerAPI\Response\RefundHistoryResponse;
-use Readdle\AppStoreServerAPI\Response\RetrieveExternalPurchaseReportResponse;
 use Readdle\AppStoreServerAPI\Response\SendTestNotificationResponse;
 use Readdle\AppStoreServerAPI\Response\StatusResponse;
 use Readdle\AppStoreServerAPI\Response\TransactionInfoResponse;
 
-class AppStoreServerAPIDecorator implements AppStoreServerAPIInterface
+class AppStoreServerApiDecorator implements AppStoreServerAPIInterface
 {
     const PRODUCTION_BASE_URL = 'https://api.storekit.itunes.apple.com/inApps';
     const SANDBOX_BASE_URL = 'https://api.storekit-sandbox.itunes.apple.com/inApps';
@@ -291,10 +291,10 @@ class AppStoreServerAPIDecorator implements AppStoreServerAPIInterface
         if($this->environment === Environment::SANDBOX){
             return self::SANDBOX_BASE_URL;
         }
-        if($this->environment === Environment::PRODUCTION_EXTERNAL){
+        if($this->environment === EnvironmentExternalApi::PRODUCTION_EXTERNAL){
             return self::PRODUCTION_BASE_URL_EXTERNAL_API;
         }
-        if($this->environment === Environment::SANDBOX_EXTERNAL){
+        if($this->environment === EnvironmentExternalApi::SANDBOX_EXTERNAL){
             return self::SANDBOX_BASE_URL_EXTERNAL_API;
         }
         return self::SANDBOX_BASE_URL;
@@ -338,14 +338,14 @@ class AppStoreServerAPIDecorator implements AppStoreServerAPIInterface
         return call_user_func([$responseClass, 'createFromString'], $responseText, $request);
     }
 
-    public function retrieveExternalPurchaseReport(string $requestIdentifier): RetrieveExternalPurchaseReportResponse
+    public function retrieveExternalPurchaseReport(string $requestIdentifier): GetTransactionReportResponse
     {
-        /** @var RetrieveExternalPurchaseReportResponse $response */
+        /** @var GetTransactionReportResponse $response */
         $response = $this->performRequest(
-            RetrieveExternalPurchaseReportRequest::class,
-            RetrieveExternalPurchaseReportResponse::class,
+            GetTransactionReportRequest::class,
+            GetTransactionReportResponse::class,
             ['requestIdentifier' => $requestIdentifier],
-            new RetrieveExternalPurchaseReportQueryParams()
+            new GetTransactionReportQueryParams()
         );
         return $response;
     }

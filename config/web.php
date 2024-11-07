@@ -10,8 +10,11 @@ $config = [
     'modules' => [
         'v1' => [
             'class' => 'app\modules\v1\Module',
+            'defaultRoute' => 'swagger/doc'
         ],
+        
     ],
+    
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
@@ -20,6 +23,16 @@ $config = [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'SIYrP11CnD4IvVOr_y0QfFB2EB3T76mZ',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
+            'enableCsrfValidation' => false
+        ],
+        'swagger' => [
+            'class' => 'light\swagger\components\Swagger',
+            'scanDir' => [
+               'app/modules/v1/controllers', // Add this line
+            ],
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
@@ -38,11 +51,11 @@ $config = [
             'useFileTransport' => true,
         ],
         'log' => [
-            'traceLevel' => YII_DEBUG ? 3 : 0,
+            'traceLevel' => 3, // Set this to 3 for more detailed logging
             'targets' => [
                 [
                     'class' => 'yii\log\FileTarget',
-                    'levels' => ['error', 'warning'],
+                    'levels' => ['error', 'warning', 'info', 'trace'], // Log all levels
                 ],
             ],
         ],
@@ -51,6 +64,10 @@ $config = [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/get-transaction-report',
+                ],
             ],
         ],
     ],

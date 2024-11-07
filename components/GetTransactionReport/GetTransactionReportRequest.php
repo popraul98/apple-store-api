@@ -1,4 +1,5 @@
 <?php
+
 namespace app\components\GetTransactionReport;
 
 use Readdle\AppStoreServerAPI\Request\AbstractRequest;
