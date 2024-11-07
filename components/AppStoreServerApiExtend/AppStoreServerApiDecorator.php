@@ -6,6 +6,10 @@ use app\components\AppStoreServerApiExtend\EnvironmentExternalApi;
 use app\components\GetTransactionReport\GetTransactionReportQueryParams;
 use app\components\GetTransactionReport\GetTransactionReportRequest;
 use app\components\GetTransactionReport\GetTransactionReportResponse;
+use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportQueryParams;
+use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportRequest;
+use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportRequestBody;
+use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportResponse;
 use Readdle\AppStoreServerAPI\AppStoreServerAPIInterface;
 use Readdle\AppStoreServerAPI\Environment;
 use Readdle\AppStoreServerAPI\Exception\HTTPRequestAborted;
@@ -346,6 +350,18 @@ class AppStoreServerApiDecorator implements AppStoreServerAPIInterface
             GetTransactionReportResponse::class,
             ['requestIdentifier' => $requestIdentifier],
             new GetTransactionReportQueryParams()
+        );
+        return $response;
+    }
+
+    public function sendExternalPurchaseReport(array $requestBody): SendExternalPurchaseReportResponse
+    {
+        /** @var SendExternalPurchaseReportResponse $response */
+        $response = $this->performRequest(
+            SendExternalPurchaseReportRequest::class,
+            SendExternalPurchaseReportResponse::class,
+            null,
+            new SendExternalPurchaseReportRequestBody($requestBody)
         );
         return $response;
     }
