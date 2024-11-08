@@ -9,11 +9,33 @@ use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportResponse
 use OpenApi\Annotations as OA;
 use Readdle\AppStoreServerAPI\Environment;
 use Readdle\AppStoreServerAPI\Exception\AppStoreServerAPIException;
+use Readdle\AppStoreServerAPI\RequestBody\ConsumptionRequestBody;
+use yii\db\Exception;
+use yii\web\BadRequestHttpException;
 use yii\web\Controller;
+use yii\web\Response;
 
 
 class SendExternalPurchaseReportController extends ClientController
 {
+    public array $lineItems = [
+        'lineItemId' => '',
+        'creationDate' => '',
+        'eventType' => '',
+        'productType' => '',
+        'productIdentifier' => '',
+        'amountTaxInclusive' => '',
+        'amountTaxExclusive' => '',
+        'taxAmount' => '',
+        'netAmountTaxExclusive' => '',
+        'reportingCurrency' => '',
+        'pricingCurrency' => '',
+        'taxCountry' => '',
+        'quantity' => '',
+        'restatement' => false,
+        'erroneouslySubmitted' => false,
+    ];
+    
     /**
      * @OA\Post(
      *     path="/v1/send-external-purchase-report",
@@ -56,37 +78,44 @@ class SendExternalPurchaseReportController extends ClientController
      */
     public function actionIndex()
     {
-        if (!in_array($this->credentials['status'], [SendExternalPurchaseReportRequestBody::LINE_ITEM, SendExternalPurchaseReportRequestBody::NO_LINE_ITEM, SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN])) {
-            throw new \Exception("Json contains invalid environment name: {$this->credentials['status']}");
+        if (isset($this->credentials['status']) && !in_array($this->credentials['status'], [SendExternalPurchaseReportRequestBody::LINE_ITEM, SendExternalPurchaseReportRequestBody::NO_LINE_ITEM, SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN])) {
+            throw new BadRequestHttpException("Json contains invalid environment name: {$this->credentials['status']}");
         }
         
         try {
+            
             if($this->credentials['status'] == SendExternalPurchaseReportRequestBody::LINE_ITEM){
 
-                SendExternalPurchaseReportRequestBody::mappingDataLineItems($this->credentials,SendExternalPurchaseReportRequestBody::$lineItems);
+                $this->mappingDataLineItems($this->credentials,$this->lineItems);
                 
-                //TODO: verificare toate fileds din $lineItems sunt populate si respecta tipul(CONST).
+                $validationResult = $this->validateLineItem($this->lineItems);
                 
-                var_dump('ssad');die;
+                if ($validationResult !== true) {
+                    throw new BadRequestHttpException($validationResult);
+                }
                 
-                $this->api->sendExternalPurchaseReport([
+                if (!isset($this->credentials['externalPurchaseId']) || !isset($this->credentials['requestIdentifier'])){
+                    throw new BadRequestHttpException("Parameter externalPurchaseId or requestIdentifier is missing.");
+                }
+
+                $infoResponse = $this->api->sendExternalPurchaseReport([
                     'requestIdentifier' => $this->credentials['requestIdentifier'],
                     'externalPurchaseId' => $this->credentials['externalPurchaseId'],
                     'status' => SendExternalPurchaseReportRequestBody::LINE_ITEM,
-                    'lineItems' => SendExternalPurchaseReportRequestBody::$lineItems 
+                    'lineItems' => [$this->lineItems]
                 ]); 
                 
             } elseif ($this->credentials['status'] == SendExternalPurchaseReportRequestBody::NO_LINE_ITEM){
-                
-                $this->api->sendExternalPurchaseReport([
+
+                $infoResponse = $this->api->sendExternalPurchaseReport([
                     'requestIdentifier' => $this->credentials['requestIdentifier'],
                     'externalPurchaseId' => $this->credentials['externalPurchaseId'],
                     'status' => SendExternalPurchaseReportRequestBody::NO_LINE_ITEM,
                 ]);
                 
             } elseif ($this->credentials['status'] == SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN){
-                
-                $this->api->sendExternalPurchaseReport([
+
+                $infoResponse = $this->api->sendExternalPurchaseReport([
                     'requestIdentifier' => $this->credentials['requestIdentifier'],
                     'externalPurchaseId' => $this->credentials['externalPurchaseId'],
                     'status' => SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN,
@@ -94,13 +123,70 @@ class SendExternalPurchaseReportController extends ClientController
                 
             }
             
-            
         } catch (AppStoreServerAPIException $e) {
-            exit($e->getMessage());
+            
+            \Yii::$app->response->statusCode = $e->getCode();
+            return ['errors' => $e->getMessage()];
+        }
+        
+        return $infoResponse->getResponse();
+    }
+
+    protected function mappingDataLineItems(array $sourceArray, array &$lineItems): void
+    {
+        /**
+         * Populates elements in $sourceArray from $lineItems, only for keys present in both arrays.
+         *
+         * @param array $sourceArray The source array.
+         * @param array &$lineItems The target array (passed by reference).
+         */
+
+        foreach ($lineItems as $key => &$value) { //Note the & for pass by reference
+            if (array_key_exists($key, $sourceArray)) {
+                $value = $sourceArray[$key];
+            }
+        }
+    }
+
+    protected function validateLineItem(array $lineItem): bool|string
+    {
+        $requiredFields = array_keys($this->lineItems);
+
+        foreach ($requiredFields as $field) {
+
+            // Check for missing or empty required fields
+            if (!isset($lineItem[$field]) || $lineItem[$field] === '') {
+                return "The field '$field' is required and cannot be empty.";
+            }
+
+            // Handle numeric fields - ensure they are actually numeric
+            if (in_array($field, ['amountTaxInclusive', 'amountTaxExclusive', 'taxAmount', 'netAmountTaxExclusive', 'quantity'])) {
+                if (!is_numeric($lineItem[$field])) {
+                    return "The field '$field' must be a numeric value.";
+                }
+            }
         }
 
-        $reportInfo = $reportInfoResponse->getReport();
+        // Check for valid eventType
+        if (!in_array($lineItem['eventType'], [SendExternalPurchaseReportRequestBody::BUY, SendExternalPurchaseReportRequestBody::REFUND])) {
+            return "Invalid eventType: it must be either 'BUY' or 'REFUND'.";
+        }
 
-        return json_encode($reportInfo);
+        // Check for valid productType
+        if (!in_array($lineItem['productType'], [SendExternalPurchaseReportRequestBody::ONE_TIME_BUY, SendExternalPurchaseReportRequestBody::SUBSCRIPTION])) {
+            return "Invalid productType: it must be either 'ONE_TIME_BUY' or 'SUBSCRIPTION'.";
+        }
+
+        // Check for valid currencies
+        if (!in_array($lineItem['reportingCurrency'], SendExternalPurchaseReportRequestBody::ALLOWED_CURRENCIES) || !in_array($lineItem['pricingCurrency'], SendExternalPurchaseReportRequestBody::ALLOWED_CURRENCIES)) {
+            return "Invalid currency: the reporting and pricing currencies must be allowed.";
+        }
+
+        // Check for valid taxCountry
+        if (!in_array($lineItem['taxCountry'], [SendExternalPurchaseReportRequestBody::ROMANIA_PREFIX])) {
+            return "Invalid taxCountry: '$lineItem[taxCountry]' is not allowed.";
+        }
+
+        return true; // All fields are valid
     }
 }

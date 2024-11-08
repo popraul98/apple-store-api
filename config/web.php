@@ -12,7 +12,6 @@ $config = [
             'class' => 'app\modules\v1\Module',
             'defaultRoute' => 'swagger/doc'
         ],
-        
     ],
     
     'aliases' => [
@@ -27,6 +26,10 @@ $config = [
                 'application/json' => 'yii\web\JsonParser',
             ],
             'enableCsrfValidation' => false
+        ],
+        'response' => [
+            'class' => 'yii\web\Response',
+            'format' => \yii\web\Response::FORMAT_JSON,
         ],
         'swagger' => [
             'class' => 'light\swagger\components\Swagger',

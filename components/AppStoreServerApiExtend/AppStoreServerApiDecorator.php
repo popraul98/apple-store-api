@@ -6,7 +6,6 @@ use app\components\AppStoreServerApiExtend\EnvironmentExternalApi;
 use app\components\GetTransactionReport\GetTransactionReportQueryParams;
 use app\components\GetTransactionReport\GetTransactionReportRequest;
 use app\components\GetTransactionReport\GetTransactionReportResponse;
-use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportQueryParams;
 use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportRequest;
 use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportRequestBody;
 use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportResponse;
@@ -73,7 +72,7 @@ class AppStoreServerApiDecorator implements AppStoreServerAPIInterface
      * @throws WrongEnvironmentException
      */
     public function __construct(string $environment, string $issuerId, string $bundleId, string $keyId, string $key)
-    {
+    {   
         if (!in_array($environment, [Environment::PRODUCTION, Environment::SANDBOX, EnvironmentExternalApi::PRODUCTION_EXTERNAL, EnvironmentExternalApi::SANDBOX_EXTERNAL])) {
             throw new WrongEnvironmentException($environment);
         }
@@ -320,13 +319,14 @@ class AppStoreServerApiDecorator implements AppStoreServerAPIInterface
         ?AbstractRequestQueryParams $requestQueryParams = null,
         ?AbstractRequestBody $requestBody = null
     ): ?AbstractResponse {
+        
         if (
             !is_subclass_of($requestClass, AbstractRequest::class)
             || (!empty($responseClass) && !is_subclass_of($responseClass, AbstractResponse::class))
         ) {
             throw new InvalidImplementationException($requestClass, $responseClass);
         }
-
+        
         $request = $this->createRequest($requestClass, $requestQueryParams, $requestBody);
 
         if (!empty($requestUrlVars)) {
@@ -334,7 +334,7 @@ class AppStoreServerApiDecorator implements AppStoreServerAPIInterface
         }
 
         $responseText = HTTPRequest::performRequest($request);
-
+        
         if (empty($responseClass)) {
             return null;
         }
@@ -353,13 +353,14 @@ class AppStoreServerApiDecorator implements AppStoreServerAPIInterface
         );
         return $response;
     }
-
+    
     public function sendExternalPurchaseReport(array $requestBody): SendExternalPurchaseReportResponse
     {
         /** @var SendExternalPurchaseReportResponse $response */
         $response = $this->performRequest(
             SendExternalPurchaseReportRequest::class,
             SendExternalPurchaseReportResponse::class,
+            [],
             null,
             new SendExternalPurchaseReportRequestBody($requestBody)
         );

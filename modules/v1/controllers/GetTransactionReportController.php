@@ -57,8 +57,6 @@ class GetTransactionReportController extends ClientController
             exit($e->getMessage());
         }
 
-        $reportInfo = $reportInfoResponse->getReport();
-
-        return json_encode($reportInfo);
+        return $reportInfoResponse->getReport();
     }
 }

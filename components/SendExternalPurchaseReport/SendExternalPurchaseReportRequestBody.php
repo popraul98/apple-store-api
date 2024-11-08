@@ -9,6 +9,28 @@ final class SendExternalPurchaseReportRequestBody extends AbstractRequestBody
     //status of the transaction
     CONST LINE_ITEM = "LINE_ITEM";
     CONST NO_LINE_ITEM = "NO_LINE_ITEM";
+    
+    
+    //type of the productType
+    CONST ONE_TIME_BUY = "ONE_TIME_BUY";
+    CONST SUBSCRIPTION = "SUBSCRIPTION";
+    
+    
+    //type of the eventType
+    CONST BUY = "BUY";
+    CONST REFUND = "REFUND";
+    
+    
+    //allowed currencies for 'reportingCurrency' and 'pricingCurrency'
+    public CONST ALLOWED_CURRENCIES = [
+        'CLP', 'EUR', 'QAR', 'COP', 'VND', 'EGP', 'THB', 'HKD', 'NOK', 'BRL', 'GBP', 'AUD', 'SEK', 'INR', 'BGN',
+        'ZAR', 'KZT', 'NGN', 'TWD', 'MXN', 'CHF', 'PEN', 'DKK', 'AED', 'ILS', 'KRW', 'PHP', 'TZS', 'PKR', 'HUF',
+        'IDR', 'CNY', 'MYR', 'RUB', 'RON', 'SGD', 'TRY', 'CZK', 'SAR', 'USD', 'NZD', 'PLN', 'JPY', 'CAD'
+    ];
+    
+    //allowed countries for 'taxCountry'
+    CONST ROMANIA_PREFIX = "ROU";
+    
 
     /**
      * When token is UNRECOGNIZED_TOKEN need:
@@ -36,12 +58,12 @@ final class SendExternalPurchaseReportRequestBody extends AbstractRequestBody
      * If you submitted a line item in error and want Apple to ignore it, use the same lineItemId as in the original submission. 
      * Set both the restatement and erroneouslySubmitted fields to true. 
      * (You may undo this action by submitting the line item again, with restatement set to true, and erroneouslySubmitted set to false.) 
-     * Be sure to include all of the original line item data fields, and recalculate the netAmountTaxExclusive field to correctly represent 
+     * Be sure to include all the original line item data fields, and recalculate the netAmountTaxExclusive field to correctly represent 
      * the net amount with the erroneously submitted line item accounted for.
      * 
      * https://developer.apple.com/documentation/externalpurchaseserverapi/reportcorrections
      */
-    public static array $lineItems = [
+    protected array $lineItems = [
         'lineItemId' => '',
         'creationDate' => '',
         'eventType' => '',
@@ -59,20 +81,9 @@ final class SendExternalPurchaseReportRequestBody extends AbstractRequestBody
         'erroneouslySubmitted' => false,
     ];
 
-    public static function mappingDataLineItems(array $sourceArray, array &$lineItems): void
-    {
-        /**
-         * Populates elements in $sourceArray from $lineItems, only for keys present in both arrays.
-         *
-         * @param array $sourceArray The source array.
-         * @param array &$lineItems The target array (passed by reference).
-         */
-
-        foreach ($lineItems as $key => &$value) { //Note the & for pass by reference
-            if (array_key_exists($key, $sourceArray)) {
-                $value = $sourceArray[$key];
-            }
-        }
-    }
-
+    protected array $requiredFields = [
+        'requestIdentifier',
+        'externalPurchaseId',
+        'status',
+    ];
 }

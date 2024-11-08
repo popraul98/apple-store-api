@@ -11,18 +11,18 @@ use Readdle\AppStoreServerAPI\Response\AbstractResponse;
  */
 class SendExternalPurchaseReportResponse extends AbstractResponse
 {
-    protected array $report;
+    protected array $response;
 
     /**
      * @return array
      */
-    public function getReport(): array
+    public function getResponse(): array
     {
-        return $this->report;
+        return $this->response;
     }
 
     public function __construct(array $data)
     {
-        $this->report = $data; // Or populate specific properties
+        $this->response = $data; // Or populate specific properties
     }
 }
