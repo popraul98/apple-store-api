@@ -4,6 +4,7 @@ namespace app\modules\v1\controllers;
 
 use app\components\AppStoreServerApiExtend\AppStoreServerApiDecorator;
 use Readdle\AppStoreServerAPI\Exception\WrongEnvironmentException;
+use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use Readdle\AppStoreServerAPI\Environment;
 use app\components\AppStoreServerApiExtend\EnvironmentExternalApi;
@@ -30,7 +31,7 @@ class ClientController extends Controller
         }
 
         if (!in_array($credentials['env'], [Environment::PRODUCTION, Environment::SANDBOX, EnvironmentExternalApi::PRODUCTION_EXTERNAL, EnvironmentExternalApi::SANDBOX_EXTERNAL])) {
-            throw new \Exception("Json contains invalid environment name: {$credentials['env']}");
+            throw new BadRequestHttpException("Json contains invalid environment name: {$credentials['env']}");
         }
 
         try {
