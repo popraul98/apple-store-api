@@ -2,7 +2,7 @@
 
 namespace app\modules\v1\controllers;
 
-use app\models\Transactions;
+use app\models\ExternalPurchaseToken;
 use OpenApi\Annotations as OA;
 
 class InitTokenController extends ClientController
@@ -112,16 +112,17 @@ class InitTokenController extends ClientController
      */
     public function actionIndex()
     {
-        $transactions = Transactions::find()->where(['base64_token' => $this->data['base64_token']])->one();
+        $external_purchase_token = ExternalPurchaseToken::find()->where(['base64_token' => $this->data['base64_token']])->one();
 
-        if (!$transactions) {
-            $transactions = new Transactions();
-            $transactions->notify_time = null;
-            $transactions->base64_token = $this->data['base64_token'];
-            $transactions->bundle = $this->data['bundleId'];
-            $transactions->created_at = time();
+        if (!$external_purchase_token) {
+            $external_purchase_token = new ExternalPurchaseToken();
+            $external_purchase_token->notify_time = null;
+            $external_purchase_token->external_purchase_id = $this->data['externalPurchaseId'];
+            $external_purchase_token->base64_token = $this->data['base64_token'];
+            $external_purchase_token->bundle = $this->data['bundleId'];
+            $external_purchase_token->created_at = time();
 
-            if ($transactions->save()) {
+            if ($external_purchase_token->save()) {
                 return array([
                     'code' => 0,
                     'message' => "success"
@@ -130,7 +131,7 @@ class InitTokenController extends ClientController
 
             return array([
                 'code' => 1,
-                'message' => $transactions->validate()
+                'message' => $external_purchase_token->validate()
             ]);
         }
         return array([

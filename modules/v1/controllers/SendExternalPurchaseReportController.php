@@ -6,6 +6,7 @@ use app\components\AppStoreServerApiExtend\EnvironmentExternalApi;
 use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportRequest;
 use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportRequestBody;
 use app\components\SendExternalPurchaseReport\SendExternalPurchaseReportResponse;
+use app\models\ExternalPurchaseToken;
 use OpenApi\Annotations as OA;
 use Readdle\AppStoreServerAPI\Environment;
 use Readdle\AppStoreServerAPI\Exception\AppStoreServerAPIException;
@@ -119,7 +120,9 @@ class SendExternalPurchaseReportController extends ClientController
         }
         
         try {
-            
+            $external_purchase_token = ExternalPurchaseToken::find()->where(['external_purchase_id' => $this->data['externalPurchaseId']])->one();
+            $external_purchase_token->setNotifyTime();
+                
             if($this->data['status'] == SendExternalPurchaseReportRequestBody::LINE_ITEM){
 
                 $this->mappingDataLineItems($this->data,$this->lineItems);
@@ -158,7 +161,6 @@ class SendExternalPurchaseReportController extends ClientController
                 ]);
                 
             }
-            
         } catch (AppStoreServerAPIException $e) {
             
             \Yii::$app->response->statusCode = $e->getCode();
@@ -225,4 +227,6 @@ class SendExternalPurchaseReportController extends ClientController
 
         return true; // All fields are valid
     }
+    
+    
 }
