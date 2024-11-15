@@ -43,27 +43,63 @@ class SendExternalPurchaseReportController extends ClientController
      *     description="Send reports to Apple, informations about transactions and tokens",
      *     tags={"Transaction Reports"},
      *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(
-     *                 property="requestIdentifier",
-     *                 type="string",
-     *                 description="Unique identifier for the request."
-     *             )
-     *         )
-     *     ),
+     *          required=true,
+     *          @OA\JsonContent(
+     *              type="object",
+     *              required={"secret_client", "env", "issuerId", "bundleId", "keyId", "key", "base64_token"},
+     *              @OA\Property(
+     *                  property="secret_client",
+     *                  type="string",
+     *                  description="Client secret key."
+     *              ),
+     *              @OA\Property(
+     *                  property="env",
+     *                  type="string",
+     *                  description="Environment identifier (e.g., Sandbox or Production)."
+     *              ),
+     *              @OA\Property(
+     *                  property="issuerId",
+     *                  type="string",
+     *                  description="Issuer ID of the client."
+     *              ),
+     *              @OA\Property(
+     *                  property="bundleId",
+     *                  type="string",
+     *                  description="Bundle ID of the application."
+     *              ),
+     *              @OA\Property(
+     *                  property="keyId",
+     *                  type="string",
+     *                  description="Key ID associated with the private key."
+     *              ),
+     *              @OA\Property(
+     *                  property="key",
+     *                  type="string",
+     *                  description="Private key in PEM format."
+     *              ),
+     *              @OA\Property(
+     *                  property="base64_token",
+     *                  type="string",
+     *                  description="Base64-encoded token for transactions."
+     *              ),
+     *              @OA\Property(
+     *                  property="lineItems",
+     *                  type="array",
+     *                  description="The report data",
+     *                  @OA\Items(type="object")
+     *              )
+     *          )
+     *      ),
      *     @OA\Response(
      *         response=200,
      *         description="Transaction report retrieved successfully",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(
-     *                 property="reportData",
-     *                 type="array",
-     *                 description="The report data",
-     *                 @OA\Items(type="object")
-     *             )
+                   @OA\Property(
+     *                   property="requestIdentifier",
+     *                   type="string",
+     *                   description="requestIdentifier that have send with report"
+     *               ),
      *         )
      *     ),
      *     @OA\Response(
@@ -78,15 +114,15 @@ class SendExternalPurchaseReportController extends ClientController
      */
     public function actionIndex()
     {
-        if (isset($this->credentials['status']) && !in_array($this->credentials['status'], [SendExternalPurchaseReportRequestBody::LINE_ITEM, SendExternalPurchaseReportRequestBody::NO_LINE_ITEM, SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN])) {
-            throw new BadRequestHttpException("Json contains invalid environment name: {$this->credentials['status']}");
+        if (isset($this->data['status']) && !in_array($this->data['status'], [SendExternalPurchaseReportRequestBody::LINE_ITEM, SendExternalPurchaseReportRequestBody::NO_LINE_ITEM, SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN])) {
+            throw new BadRequestHttpException("Json contains invalid environment name: {$this->data['status']}");
         }
         
         try {
             
-            if($this->credentials['status'] == SendExternalPurchaseReportRequestBody::LINE_ITEM){
+            if($this->data['status'] == SendExternalPurchaseReportRequestBody::LINE_ITEM){
 
-                $this->mappingDataLineItems($this->credentials,$this->lineItems);
+                $this->mappingDataLineItems($this->data,$this->lineItems);
                 
                 $validationResult = $this->validateLineItem($this->lineItems);
                 
@@ -94,30 +130,30 @@ class SendExternalPurchaseReportController extends ClientController
                     throw new BadRequestHttpException($validationResult);
                 }
                 
-                if (!isset($this->credentials['externalPurchaseId']) || !isset($this->credentials['requestIdentifier'])){
+                if (!isset($this->data['externalPurchaseId']) || !isset($this->data['requestIdentifier'])){
                     throw new BadRequestHttpException("Parameter externalPurchaseId or requestIdentifier is missing.");
                 }
 
                 $infoResponse = $this->api->sendExternalPurchaseReport([
-                    'requestIdentifier' => $this->credentials['requestIdentifier'],
-                    'externalPurchaseId' => $this->credentials['externalPurchaseId'],
+                    'requestIdentifier' => $this->data['requestIdentifier'],
+                    'externalPurchaseId' => $this->data['externalPurchaseId'],
                     'status' => SendExternalPurchaseReportRequestBody::LINE_ITEM,
                     'lineItems' => [$this->lineItems]
                 ]); 
                 
-            } elseif ($this->credentials['status'] == SendExternalPurchaseReportRequestBody::NO_LINE_ITEM){
+            } elseif ($this->data['status'] == SendExternalPurchaseReportRequestBody::NO_LINE_ITEM){
 
                 $infoResponse = $this->api->sendExternalPurchaseReport([
-                    'requestIdentifier' => $this->credentials['requestIdentifier'],
-                    'externalPurchaseId' => $this->credentials['externalPurchaseId'],
+                    'requestIdentifier' => $this->data['requestIdentifier'],
+                    'externalPurchaseId' => $this->data['externalPurchaseId'],
                     'status' => SendExternalPurchaseReportRequestBody::NO_LINE_ITEM,
                 ]);
                 
-            } elseif ($this->credentials['status'] == SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN){
+            } elseif ($this->data['status'] == SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN){
 
                 $infoResponse = $this->api->sendExternalPurchaseReport([
-                    'requestIdentifier' => $this->credentials['requestIdentifier'],
-                    'externalPurchaseId' => $this->credentials['externalPurchaseId'],
+                    'requestIdentifier' => $this->data['requestIdentifier'],
+                    'externalPurchaseId' => $this->data['externalPurchaseId'],
                     'status' => SendExternalPurchaseReportRequestBody::UNRECOGNIZED_TOKEN,
                 ]);
                 
@@ -148,7 +184,7 @@ class SendExternalPurchaseReportController extends ClientController
         }
     }
 
-    protected function validateLineItem(array $lineItem): bool|string
+    protected function validateLineItem(array $lineItem)
     {
         $requiredFields = array_keys($this->lineItems);
 

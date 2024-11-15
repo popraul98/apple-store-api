@@ -52,7 +52,7 @@ class GetTransactionReportController extends ClientController
     public function actionIndex()
     {
         try {
-            $reportInfoResponse = $this->api->retrieveExternalPurchaseReport($this->credentials['requestIdentifier']);
+            $reportInfoResponse = $this->api->retrieveExternalPurchaseReport($this->data['requestIdentifier']);
         } catch (AppStoreServerAPIException $e) {
             exit($e->getMessage());
         }

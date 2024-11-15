@@ -8,11 +8,14 @@ use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use Readdle\AppStoreServerAPI\Environment;
 use app\components\AppStoreServerApiExtend\EnvironmentExternalApi;
+use yii\web\UnauthorizedHttpException;
 
 class ClientController extends Controller
 {
+    const secret_client = "4491e8e92fffd6508bd6508db06c89de";
+
     public ?AppStoreServerAPIDecorator $api = null;
-    public ?array $credentials = null;
+    public ?array $data = null;
 
     public function beforeAction($action)
     {
@@ -22,12 +25,16 @@ class ClientController extends Controller
         
         $credentials = json_decode($credentialsRaw, true);
 
+        if(!isset($credentials['secret_client']) || $credentials['secret_client'] != self::secret_client){
+            throw new UnauthorizedHttpException(\Yii::t('yii', 'Unauthorized'));
+        }
+
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception("Body contains invalid JSON");
+            throw new BadRequestHttpException("Body contains invalid JSON");
         }
 
         if (array_diff($keys, array_keys($credentials))) {
-            throw new \Exception("Check Json body for presence of the following keys: " . join(',', $keys));
+            throw new BadRequestHttpException("Check Json body for presence of the following keys: " . join(',', $keys));
         }
 
         if (!in_array($credentials['env'], [Environment::PRODUCTION, Environment::SANDBOX, EnvironmentExternalApi::PRODUCTION_EXTERNAL, EnvironmentExternalApi::SANDBOX_EXTERNAL])) {
@@ -42,7 +49,7 @@ class ClientController extends Controller
                 $credentials['keyId'],
                 $credentials['key']
             );
-            $this->credentials = $credentials;
+            $this->data = $credentials;
         } catch (WrongEnvironmentException $e) {
             throw new \Exception($e->getMessage());
         }
