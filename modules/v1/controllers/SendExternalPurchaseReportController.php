@@ -121,7 +121,9 @@ class SendExternalPurchaseReportController extends ClientController
         
         try {
             $external_purchase_token = ExternalPurchaseToken::find()->where(['external_purchase_id' => $this->data['externalPurchaseId']])->one();
-            $external_purchase_token->setNotifyTime();
+            if($external_purchase_token){
+                $external_purchase_token->setNotifyTime();
+            }
                 
             if($this->data['status'] == SendExternalPurchaseReportRequestBody::LINE_ITEM){
 
